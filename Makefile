@@ -10,4 +10,8 @@ migratedown:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/bankdb?sslmode=disable" -verbose down
 sqlc:
 	sqlc generate
-.PHONY: createdb dropdb postgres migrateup migratedown sqlc
+test:
+	go test -v -cover ./...
+ccache:
+	go clean -testcache
+.PHONY: createdb dropdb postgres migrateup migratedown sqlc test ccache

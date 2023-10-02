@@ -23,6 +23,6 @@ func RandomName(length int)string{
 }
 
 func RandomCurrency()string{
-	cur := []string{"IND", "SGP", "USD", "CAD"}
+	cur := []string{USD,EUR,CAD}
 	return cur[RandomNumber(0, len(cur) - 1)]
 }

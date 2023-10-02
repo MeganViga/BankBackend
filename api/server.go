@@ -3,6 +3,9 @@ package api
 import (
 	db "github.com/MeganViga/BankBackend/db/sqlc"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
+	//"github.com/vektah/gqlparser/v2/validator/v10"
 )
 
 //Server serves requests for http bank service
@@ -17,10 +20,14 @@ func NewServer(store db.Store)*Server{
 		store: store,
 	}
 	router := gin.Default()
+	if v, ok := binding.Validator.Engine().(*validator.Validate);ok{
+			v.RegisterValidation("currency",validCurrency)
+	}
 	router.POST("/accounts",server.createAccount)
 	router.GET("/account/:id",server.getAccount)
 	router.GET("/accounts",server.getAccounts)
 	router.DELETE("/account/:id",server.deleteAccount)
+	router.POST("/transfers",server.createTransfer)
 
 	server.router = router
 	return server

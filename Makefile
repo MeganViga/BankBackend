@@ -14,4 +14,6 @@ test:
 	go test -v -cover ./...
 ccache:
 	go clean -testcache
-.PHONY: createdb dropdb postgres migrateup migratedown sqlc test ccache
+server:
+	go run main.go
+.PHONY: createdb dropdb postgres migrateup migratedown sqlc test ccache server

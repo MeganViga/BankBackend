@@ -16,4 +16,6 @@ ccache:
 	go clean -testcache
 server:
 	go run main.go
-.PHONY: createdb dropdb postgres migrateup migratedown sqlc test ccache server
+mock: 
+	mockgen -package mockdb --destination db/mock/store.go github.com/MeganViga/BankBackend/db/sqlc Store
+.PHONY: createdb dropdb postgres migrateup migratedown sqlc test ccache server mock

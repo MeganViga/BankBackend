@@ -10,7 +10,7 @@ import (
 	_ "github.com/lib/pq"
 )
 var testQueries *Queries
-var testStore *Store
+var testStore Store
 // var DBDriver = "postgres"
 // var DBSource = "postgresql://root:secret@localhost:5432/bankdb?sslmode=disable"
 func TestMain(m *testing.M){

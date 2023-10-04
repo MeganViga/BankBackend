@@ -16,7 +16,7 @@ migratedown1:
 sqlc:
 	sqlc generate
 test:
-	go test -v -cover ./...
+	go clean -testcache | go test -v -cover ./...
 ccache:
 	go clean -testcache
 server:

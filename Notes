@@ -1,3 +1,6 @@
 SERVER_ADDRESS = 0.0.0.0:8080 make server --> to override values in app.env
 
 CMD+SHIFT+P , Install/Update tools to fix gomock.NewController(t) error
+
+
+migrate create -ext sql -dir db/migration -seq add_users

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	mockdb "github.com/MeganViga/BankBackend/db/mock"
 	db "github.com/MeganViga/BankBackend/db/sqlc"
@@ -110,12 +111,48 @@ func TestGetAccount(t *testing.T){
 	
 }
 
+func TestCreateAccount(t *testing.T){
+	account := randomAccount()
+	account.Balance = 0
+	ctrl := gomock.NewController(t)
+	store := mockdb.NewMockStore(ctrl)
+
+	//build stubs
+	arg := db.CreateAccountParams{
+		Owner: account.Owner,
+		Balance: account.Balance,
+		Currency: account.Currency,
+	}
+
+	store.EXPECT().CreateAccount(gomock.Any(),arg).Times(1).Return(account,nil)
+	//start the http test server
+	server := NewServer(store)
+	recorder := httptest.NewRecorder()
+	url :="/accounts"
+	arg2 := createAccountRequest{
+		Owner: arg.Owner,
+		Currency: arg.Currency,
+	}
+	bytess, err := json.Marshal(arg2)
+	require.NoError(t, err)
+	body:= bytes.NewReader(bytess)
+	request, err := http.NewRequest("POST", url, body)
+	require.NoError(t, err)
+	server.router.ServeHTTP(recorder,request)
+
+	//check response
+	require.Equal(t,http.StatusOK,recorder.Code)
+
+
+}
+
 func randomAccount()db.Account{
 	return db.Account{
 		ID: int64(util.RandomNumber(1, 1000)),
 		Owner: util.RandomName(7),
 		Balance: int64(util.RandomNumber(10,100)),
 		Currency: util.RandomCurrency(),
+		CreatedAt: time.Now(),
 	}
 }
 
@@ -125,6 +162,11 @@ func requireBodyMatchAccount(t *testing.T, body *bytes.Buffer,account db.Account
 	var getAccount db.Account
 	err = json.Unmarshal(data, &getAccount)
 	require.NoError(t, err)
-	require.Equal(t,account,getAccount)
+	
+	require.Equal(t,account.ID,getAccount.ID)
+	require.Equal(t,account.Owner,getAccount.Owner)
+	require.Equal(t,account.Balance,getAccount.Balance)
+	require.Less(t,account.CreatedAt,time.Now())
+
 
 }

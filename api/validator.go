@@ -11,3 +11,10 @@ var validCurrency validator.Func = func(fieldLevel validator.FieldLevel) bool{
 	}
 	return false
 }
+
+var validEmail validator.Func = func(fieldLevel validator.FieldLevel) bool{
+	if email , ok := fieldLevel.Field().Interface().(string);ok{
+		return util.IsEmail(email)
+	}
+	return false
+}

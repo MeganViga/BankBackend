@@ -4,16 +4,18 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/MeganViga/BankBackend/util"
 	"github.com/stretchr/testify/require"
 )
 
 func createRandomUser(t *testing.T)Userdatum{
-	
+	hashedPassword, err := util.HashPassword(util.RandomName(15))
+	require.NoError(t, err)
 	c := CreateUserParams{
 		Username: util.RandomName(6),
-		HashedPassword: util.RandomName(15),
+		HashedPassword: hashedPassword,
 		Fullname: util.RandomName(10),
 		Email: fmt.Sprintf("%s@gmail.com", util.RandomName(5)),
 	}
@@ -49,8 +51,8 @@ func TestGetUser(t *testing.T){
 	require.Equal(t,user1.Email, user2.Email)
 	require.Zero(t, user2.PasswordChangedAt)
 	require.NotZero(t, user2.CreatedAt)
-	require.Equal(t,user1.PasswordChangedAt, user2.PasswordChangedAt)
-	require.Equal(t,user1.CreatedAt, user2.CreatedAt)
+	require.WithinDuration(t,user1.PasswordChangedAt, user2.PasswordChangedAt,time.Second)
+	require.WithinDuration(t,user1.CreatedAt, user2.CreatedAt,time.Second)
 
 	
 

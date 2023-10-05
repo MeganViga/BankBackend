@@ -22,12 +22,14 @@ func NewServer(store db.Store)*Server{
 	router := gin.Default()
 	if v, ok := binding.Validator.Engine().(*validator.Validate);ok{
 			v.RegisterValidation("currency",validCurrency)
+			// v.RegisterValidation("email",validEmail) --> gin validator has inbuil email validator, that's why commenting this
 	}
 	router.POST("/accounts",server.createAccount)
 	router.GET("/account/:id",server.getAccount)
 	router.GET("/accounts",server.getAccounts)
 	router.DELETE("/account/:id",server.deleteAccount)
 	router.POST("/transfers",server.createTransfer)
+	router.POST("/users",server.createUser)
 
 	server.router = router
 	return server

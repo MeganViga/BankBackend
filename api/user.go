@@ -41,6 +41,7 @@ func (s *Server)createUser(ctx *gin.Context){
 		Email: r.Email,
 
 	}
+	//arg = db.CreateUserParams{}
 	user, err := s.store.CreateUser(ctx, arg)
 	if err != nil{
 		if pqErr := err.(*pq.Error);pqErr != nil{

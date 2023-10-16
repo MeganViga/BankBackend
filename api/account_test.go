@@ -20,7 +20,8 @@ import (
 
 
 func TestGetAccount(t *testing.T){
-	account := randomAccount()
+	user, _ := randomUser(t)
+	account := randomAccount(user.Username)
 	testCases := []struct{
 		name string
 		accountID int64
@@ -94,11 +95,12 @@ func TestGetAccount(t *testing.T){
 
 	//start test http server
 
-	server := NewServer(store)
+	server := newTestServer(t,store)
 	recorder := httptest.NewRecorder()
 	url :=fmt.Sprintf("/account/%d", tc.accountID)
 	request, err := http.NewRequest("GET", url, nil)
 	require.NoError(t, err)
+	addAuthorization(t, request, server.tokenMaker,authorizationTypeBearer, user.Username, time.Minute)
 	server.router.ServeHTTP(recorder,request)
 
 	//check response
@@ -112,7 +114,8 @@ func TestGetAccount(t *testing.T){
 }
 
 func TestCreateAccount(t *testing.T){
-	account := randomAccount()
+	user, _ := randomUser(t)
+	account := randomAccount(user.Username)
 	account.Balance = 0
 	ctrl := gomock.NewController(t)
 	store := mockdb.NewMockStore(ctrl)
@@ -120,17 +123,17 @@ func TestCreateAccount(t *testing.T){
 	//build stubs
 	arg := db.CreateAccountParams{
 		Owner: account.Owner,
-		Balance: account.Balance,
+		Balance: 0,
 		Currency: account.Currency,
 	}
 
-	store.EXPECT().CreateAccount(gomock.Any(),arg).Times(1).Return(account,nil)
+	store.EXPECT().CreateAccount(gomock.Any(),gomock.Eq(arg)).Times(1).Return(account,nil)
 	//start the http test server
-	server := NewServer(store)
+	server := newTestServer(t,store)
 	recorder := httptest.NewRecorder()
 	url :="/accounts"
 	arg2 := createAccountRequest{
-		Owner: arg.Owner,
+		//Owner: arg.Owner,
 		Currency: arg.Currency,
 	}
 	bytess, err := json.Marshal(arg2)
@@ -138,18 +141,20 @@ func TestCreateAccount(t *testing.T){
 	body:= bytes.NewReader(bytess)
 	request, err := http.NewRequest("POST", url, body)
 	require.NoError(t, err)
+	addAuthorization(t, request, server.tokenMaker,authorizationTypeBearer,user.Username, time.Minute )
 	server.router.ServeHTTP(recorder,request)
 
 	//check response
 	require.Equal(t,http.StatusOK,recorder.Code)
+	requireBodyMatchAccount(t, recorder.Body, account)
 
 
 }
 
-func randomAccount()db.Account{
+func randomAccount(owner string)db.Account{
 	return db.Account{
 		ID: int64(util.RandomNumber(1, 1000)),
-		Owner: util.RandomName(7),
+		Owner: owner,
 		Balance: int64(util.RandomNumber(10,100)),
 		Currency: util.RandomCurrency(),
 		CreatedAt: time.Now(),

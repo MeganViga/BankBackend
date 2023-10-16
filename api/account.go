@@ -2,16 +2,18 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
 	db "github.com/MeganViga/BankBackend/db/sqlc"
+	"github.com/MeganViga/BankBackend/token"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 )
 
 type createAccountRequest struct{
-	Owner    string `json:"owner" binding:"required"`
+	//Owner    string `json:"owner" binding:"required"`
 	Currency string `json:"currency" binding:"required,currency" `
 }
 func (s *Server)createAccount(ctx *gin.Context){
@@ -20,8 +22,9 @@ func (s *Server)createAccount(ctx *gin.Context){
 		ctx.JSON(http.StatusBadRequest,errResponse(err))
 		return
 	}
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 	arg := db.CreateAccountParams{
-		Owner: r.Owner,
+		Owner: authPayload.Username ,
 		Currency: r.Currency,
 		Balance: 0,
 	}
@@ -63,6 +66,12 @@ func (s *Server)getAccount(ctx *gin.Context){
 	}
 
 	// account = db.Account{}
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	if account.Owner != authPayload.Username{
+		err := errors.New("account doesn't belong to authenticated user")
+		ctx.JSON(http.StatusUnauthorized, errResponse(err))
+		return
+	}
 
 	ctx.JSON(http.StatusOK,account)
 }
@@ -78,7 +87,9 @@ func (s *Server)getAccounts(ctx *gin.Context){
 		ctx.JSON(http.StatusBadRequest,errResponse(err))
 		return
 	}
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
 	arg := db.ListAccountsParams{
+		Owner: authPayload.Username,
 		Limit: int32(r.PageSize),
 		Offset: int32(r.PageID - 1) * int32(r.PageSize),
 	}

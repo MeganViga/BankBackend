@@ -2,10 +2,12 @@ package api
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
 	db "github.com/MeganViga/BankBackend/db/sqlc"
+	"github.com/MeganViga/BankBackend/token"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,10 +25,18 @@ func (s *Server)createTransfer(ctx *gin.Context){
 		ctx.JSON(http.StatusBadRequest,errResponse(err))
 		return
 	}
-	if !s.validAccount(ctx, r.FromAccountID,r.Currency){
+	fromAccount, valid := s.validAccount(ctx,r.FromAccountID,r.Currency)
+	if !valid{
 		return
 	}
-	if !s.validAccount(ctx, r.ToAccountID,r.Currency){
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	if fromAccount.Owner != authPayload.Username{
+		err := errors.New("from account doesn't belong to authenticated user ")
+		ctx.JSON(http.StatusBadRequest,errResponse(err))
+		return
+	}
+	_, valid = s.validAccount(ctx, r.ToAccountID,r.Currency)
+	if !valid {
 		return
 	}
 	arg := db.TransferTxParams{
@@ -43,20 +53,20 @@ func (s *Server)createTransfer(ctx *gin.Context){
 	ctx.JSON(http.StatusOK,transferResult)
 }
 
-func(s *Server)validAccount(ctx *gin.Context,accountID int64, currency string)bool{
+func(s *Server)validAccount(ctx *gin.Context,accountID int64, currency string)(db.Account,bool){
 	account, err := s.store.GetAccount(ctx,accountID)
 	if err != nil{
 		if err == sql.ErrNoRows{
 			ctx.JSON(http.StatusNotFound, errResponse(err))
-			return false
+			return account, false
 		}
 		ctx.JSON(http.StatusInternalServerError, errResponse(err))
-		return false
+		return account, false
 	}
 	if account.Currency != currency{
 		 err = fmt.Errorf("account currency mismatch, requested currency: %s, actual account currency: %s", currency, account.Currency)
 		 ctx.JSON(http.StatusBadRequest, errResponse(err))
-		 return false
+		 return account, false
 	}
-	return true
+	return account, true
 }
